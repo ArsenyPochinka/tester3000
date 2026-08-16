@@ -54,12 +54,24 @@ public class AppConfig {
     }
 
     @Bean(name = "regressionExecutor")
-    Executor regressionExecutor() {
+    Executor regressionExecutor(TesterProperties properties) {
+        int parallel = Math.max(1, properties.getParallelTests());
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(2);
-        executor.setMaxPoolSize(8);
-        executor.setQueueCapacity(200);
+        executor.setCorePoolSize(parallel);
+        executor.setMaxPoolSize(parallel);
+        executor.setQueueCapacity(500);
         executor.setThreadNamePrefix("regression-");
+        executor.initialize();
+        return executor;
+    }
+
+    @Bean(name = "regressionScheduler")
+    Executor regressionScheduler() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(1);
+        executor.setMaxPoolSize(1);
+        executor.setQueueCapacity(100);
+        executor.setThreadNamePrefix("regression-sched-");
         executor.initialize();
         return executor;
     }

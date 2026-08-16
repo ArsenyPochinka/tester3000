@@ -6,21 +6,19 @@
 
 ## Что делает приложение
 
-1. Принимает параметры карты и список кодов тестов.
-2. Берёт исходные auth/clr JSON из таблицы `test_messages_from_25`.
-3. Маппит их на контракты:
+1. Принимает параметры карты и выбор кейсов (`tests` и/или `regressionTag`).
+2. Берёт исходные JSON из таблицы `regression_cases` (до 3 пар auth/clr на кейс).
+3. Маппит их на контракты (вход — сырой m025 **или** уже m210/m095):
    - авторизация → **m210** (`ProductAuthorizationRequest`);
    - клиринг → **m095** (`Inbound`).
-4. Параметризует `card`, генерирует `rId`, общий `match.key` / `link.key`, обновляет даты (кроме `expDate`).
-5. Сохраняет подготовленные сообщения в `regression_test_message`.
+4. Параметризует `card`, генерирует `rId`, общий `match.key` / `link.key` в паре, обновляет даты (кроме `expDate`).
+5. Сохраняет подготовленные primary-сообщения в `regression_test_message`.
 6. Сразу возвращает `runId` и код запуска (`0` = принят).
-7. В фоне:
-   - шлёт auth в m210;
-   - через `clearing-delay-ms` публикует clearing в Kafka;
-   - (опционально) публикует заглушечные outbox-события;
-   - пишет результаты в `process`.
-8. Слушает три outbox-топика и на каждое событие добавляет строку в `process`.
-9. По `runId` отдаёт HTML-отчёт (собирается на лету из БД).
+7. В фоне кейсы стартуют с лимитом `parallel-tests` (по умолчанию 2 сразу, остальные через `test-start-interval-ms`).
+   Внутри кейса — слоты `auth → clr → auth_add_* → clr_add_*` с паузой `message-delay-ms`;
+   при ошибке auth остальные сообщения кейса не отправляются; после успешной отправки — stub outbox (если включён).
+8. Слушает три outbox-топика и пишет события в `process`.
+9. По `runId` отдаёт HTML-отчёт.
 
 ---
 
@@ -92,8 +90,18 @@ docker compose down
 }
 ```
 
+Или только по тегу:
+
+```json
+{
+  "card": { "...": "..." },
+  "regressionTag": "Pochinka"
+}
+```
+
 - `card` — параметры карты для параметризации сообщений.
-- `tests` — коды из БД. В Swagger по умолчанию подставляются все коды на момент старта приложения. Запускаются только выбранные.
+- `tests` — коды из `regression_cases`. В Swagger example/enum подставляются все коды на момент старта.
+- `regressionTag` — тег регресса. В Swagger доступны все теги из БД (enum + example первого тега). Можно указать вместо `tests` или вместе (тогда пересечение).
 
 Ответ:
 
@@ -109,7 +117,7 @@ docker compose down
 | `runId` | Идентификатор прогона |
 | `code` | `0` — запуск принят; дальше — фон |
 
-Неизвестный код / пустой `tests` / невалидная карта → `400`.
+Неизвестный код / неизвестный тег / нет ни `tests`, ни `regressionTag` / невалидная карта → `400`.
 
 ```bash
 curl -s -X POST http://localhost:8080/api/v1/regression/run \
@@ -154,23 +162,22 @@ curl -s -X POST http://localhost:8080/api/v1/regression/run \
 ```text
 POST /run
     │
-    ├─ чтение выбранных тестов из test_messages_from_25
-    ├─ маппинг auth → m210, clr → m095 + параметризация card
-    ├─ запись в regression_test_message
+    ├─ выбор кейсов (tests и/или regressionTag)
+    ├─ маппинг слотов → m210 / m095 + card
+    ├─ запись primary в regression_test_message
     ├─ ответ { runId, code: 0 }
     │
-    └─ async (на каждый тест):
-           AUTH_SEND      → HTTP m210
-           pause clearing-delay-ms
-           CLEARING_SEND  → Kafka ccop.prx.event.clearing
-           stub (если вкл.) → по 2 сообщения в 3 outbox-топика
-           consumers      → строки process (25 / 104 / 39)
+    └─ фон:
+           первые parallel-tests кейсов сразу, остальные через test-start-interval-ms
+           внутри кейса: AUTH/CLR по слотам, pause message-delay-ms
+           ошибка AUTH → остальные сообщения кейса пропускаются
+           stub outbox (если вкл.) / consumers → process
 ```
 
 ### Связка сообщений
 
-- У auth и clearing свой `rId` (`reqId` в process).
-- Общий ключ: `match.key` (auth) = `link[].key` (clearing) — 40 символов `[A-Z0-9]` + 18-значный RRN.
+- У каждого auth/clearing свой `rId` (`reqId` в process).
+- Внутри слота (primary / add_1 / add_2) общий ключ: `match.key` (auth) = `link[].key` (clearing) — 40 символов `[A-Z0-9]` + 18-значный RRN.
 - Outbox матчится по `Object.Id.Id` = `reqId`.
 
 ### Шаги `process`
@@ -190,25 +197,29 @@ POST /run
 
 ## Каталог тестов
 
-Таблица `test_messages_from_25` — единственный источник кейсов.
+Таблица `regression_cases` — единственный источник кейсов.
 
 | Колонка | Тип | Смысл |
 |---------|-----|--------|
 | `test_code` | varchar PK | Код теста |
 | `test_description` | text | Описание |
-| `auth` | jsonb | Auth-сообщение |
-| `clr` | jsonb | Clearing (может быть NULL) |
+| `regression_tag` | varchar | Тег регресса (запуск по тегу) |
+| `auth` / `clr` | jsonb | Primary auth/clearing (любое может быть NULL) |
+| `auth_add_1` / `clr_add_1` | jsonb | Доп. пара 1 |
+| `auth_add_2` / `clr_add_2` | jsonb | Доп. пара 2 |
 
-| test_code | Описание |
-|-----------|----------|
-| `CASH` | Снятие наличных |
-| `DEPOSIT` | Внесение наличных |
-| `GOODS` | Покупка товаров |
-| `GOODS_WITH_CASHBACK` | Покупка товаров с кэшбэком |
-| `PAYMENT_DEBIT` | Дебетовый платёж |
-| `PAYMENT_CREDIT` | Кредитовый платёж |
+В полях сообщений допускается сырой JSON как в m025 **или** уже готовое сообщение по схемам m210 / m095 — параметризация одинаковая.
 
-Новый тест — insert в таблицу (или Liquibase seed) и рестарт приложения, если нужен обновлённый default-список в Swagger.
+| test_code | Описание | regression_tag |
+|-----------|----------|----------------|
+| `CASH` | Снятие наличных | `Pochinka` |
+| `DEPOSIT` | Внесение наличных | `Pochinka` |
+| `GOODS` | Покупка товаров | `Pochinka` |
+| `GOODS_WITH_CASHBACK` | Покупка товаров с кэшбэком | `Pochinka` |
+| `PAYMENT_DEBIT` | Дебетовый платёж | `Pochinka` |
+| `PAYMENT_CREDIT` | Кредитовый платёж | `Pochinka` |
+
+Новый тест — insert в таблицу (или Liquibase seed) и рестарт приложения, если нужен обновлённый default-список кодов/тегов в Swagger.
 
 ---
 
@@ -216,7 +227,8 @@ POST /run
 
 ### `regression_test_message`
 
-Подготовленные сообщения прогона: `id`, `run_id`, `test_name`, `auth_message`, `clearing_message`, `created_at`.
+Подготовленные primary-сообщения прогона: `id`, `run_id`, `test_name`, `auth_message`, `clearing_message`, `created_at`.
+Доп. слоты (`auth_add_*` / `clr_add_*`) видны в `process.result` и логах.
 
 ### `process`
 
@@ -228,7 +240,9 @@ POST /run
 
 | Параметр | Env | Default | Назначение |
 |----------|-----|---------|------------|
-| `tester3000.clearing-delay-ms` | `CLEARING_DELAY_MS` | `2000` | Пауза auth → clearing |
+| `tester3000.message-delay-ms` | `MESSAGE_DELAY_MS` | `2000` | Пауза между сообщениями внутри одного кейса |
+| `tester3000.parallel-tests` | `PARALLEL_TESTS` | `2` | Сколько кейсов выполняется одновременно |
+| `tester3000.test-start-interval-ms` | `TEST_START_INTERVAL_MS` | `3000` | Интервал старта кейсов после первых `parallel-tests` |
 | `tester3000.m210.base-url` | `M210_BASE_URL` | `http://127.0.0.1:8080` | URL m210 |
 | `tester3000.m210.stub-enabled` | `M210_STUB_ENABLED` | `true` | Встроенная заглушка m210 |
 | `tester3000.kafka.fin-outbox-stub-enabled` | `FIN_OUTBOX_STUB_ENABLED` | `true` | Заглушка outbox (3×2) |
@@ -324,5 +338,5 @@ tester3000/
 ## Заметки
 
 - HTML-отчёт — view над БД, не файл.
-- Default `tests` в Swagger обновляется при рестарте.
+- Defaults в Swagger (коды/теги) и пул `parallel-tests` берутся на старте — после смены конфига нужен рестарт.
 - После `code: 0` фон ещё может работать; для полного отчёта дождитесь outbox.

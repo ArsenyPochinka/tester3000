@@ -332,3 +332,54 @@ databaseChangeLog:
               SET test_code = 'PAYMENT_CREDIT',
                   test_description = 'Кредитовый платёж'
               WHERE test_code = 'test_PAYMENT_CREDIT_original_auth';
+  - changeSet:
+      id: 011-regression-cases-rename-and-extend
+      author: tester3000
+      changes:
+        - renameTable:
+            oldTableName: test_messages_from_25
+            newTableName: regression_cases
+        - addColumn:
+            tableName: regression_cases
+            columns:
+              - column:
+                  name: auth_add_1
+                  type: jsonb
+              - column:
+                  name: clr_add_1
+                  type: jsonb
+              - column:
+                  name: auth_add_2
+                  type: jsonb
+              - column:
+                  name: clr_add_2
+                  type: jsonb
+              - column:
+                  name: regression_tag
+                  type: varchar(255)
+        - dropNotNullConstraint:
+            tableName: regression_cases
+            columnName: auth
+            columnDataType: jsonb
+        - update:
+            tableName: regression_cases
+            columns:
+              - column:
+                  name: regression_tag
+                  value: Pochinka
+            where: regression_tag is null
+        - dropNotNullConstraint:
+            tableName: regression_test_message
+            columnName: auth_message
+            columnDataType: jsonb
+        - sql:
+            sql: |
+              ALTER TABLE regression_cases
+                ADD CONSTRAINT chk_regression_cases_has_message
+                CHECK (
+                  auth IS NOT NULL OR clr IS NOT NULL
+                  OR auth_add_1 IS NOT NULL OR clr_add_1 IS NOT NULL
+                  OR auth_add_2 IS NOT NULL OR clr_add_2 IS NOT NULL
+                );
+              CREATE INDEX IF NOT EXISTS idx_regression_cases_tag
+                ON regression_cases (regression_tag);

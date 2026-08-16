@@ -54,7 +54,9 @@ services:
       M210_BASE_URL: ${M210_BASE_URL:-http://127.0.0.1:8080}
       M210_STUB_ENABLED: ${M210_STUB_ENABLED:-true}
       FIN_OUTBOX_STUB_ENABLED: ${FIN_OUTBOX_STUB_ENABLED:-true}
-      CLEARING_DELAY_MS: ${CLEARING_DELAY_MS:-2000}
+      MESSAGE_DELAY_MS: ${MESSAGE_DELAY_MS:-2000}
+      PARALLEL_TESTS: ${PARALLEL_TESTS:-2}
+      TEST_START_INTERVAL_MS: ${TEST_START_INTERVAL_MS:-3000}
     depends_on:
       postgres:
         condition: service_healthy

@@ -30,7 +30,9 @@ springdoc:
   paths-to-match: /api/v1/regression/**
 
 tester3000:
-  clearing-delay-ms: ${CLEARING_DELAY_MS:2000}
+  message-delay-ms: ${MESSAGE_DELAY_MS:2000}
+  parallel-tests: ${PARALLEL_TESTS:2}
+  test-start-interval-ms: ${TEST_START_INTERVAL_MS:3000}
   m210:
     base-url: ${M210_BASE_URL:http://127.0.0.1:8080}
     path: /api/1.1.0/prod_auth/_request

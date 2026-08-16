@@ -24,7 +24,7 @@ public class RegressionTestMessageEntity {
     private String testName;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "auth_message", nullable = false, columnDefinition = "jsonb")
+    @Column(name = "auth_message", columnDefinition = "jsonb")
     private String authMessage;
 
     @JdbcTypeCode(SqlTypes.JSON)

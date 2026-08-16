@@ -3,8 +3,6 @@ package ru.vtb.tester3000.config;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.examples.Example;
 import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.media.ArraySchema;
-import io.swagger.v3.oas.models.media.IntegerSchema;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import org.springdoc.core.customizers.OpenApiCustomizer;
@@ -19,6 +17,8 @@ import java.util.Map;
 @Configuration
 public class OpenApiConfig {
 
+    private static final String RUN_PATH = "/api/v1/regression/run";
+
     @Bean
     OpenAPI openAPI() {
         return new OpenAPI()
@@ -29,64 +29,81 @@ public class OpenApiConfig {
     }
 
     @Bean
-    OpenApiCustomizer regressionExampleCustomizer(TestCodesSnapshot testCodesSnapshot) {
+    OpenApiCustomizer regressionExampleCustomizer(RegressionCasesSnapshot snapshot) {
         return openApi -> {
-            List<String> defaultTests = new ArrayList<>(testCodesSnapshot.getCodes());
+            List<String> codes = new ArrayList<>(snapshot.getCodes());
+            List<String> tags = new ArrayList<>(snapshot.getRegressionTags());
 
-            Schema<?> cardAuth = new Schema<>().type("object")
-                    .addProperty("presence", new Schema<>().type("boolean").example(true));
-            Schema<?> cardEmv = new Schema<>().type("object")
-                    .addProperty("mbr", new Schema<>().type("integer").example(90));
-            Schema<?> card = new Schema<>().type("object")
-                    .addProperty("auth", cardAuth)
-                    .addProperty("plasticId", new Schema<>().type("string")
-                            .example("15c812a5-edc4-4dd2-a842-6fd53be44369"))
-                    .addProperty("cardId", new Schema<>().type("string")
-                            .example("b8c89a63-3a79-4e7e-a606-8273cc8e5e4a"))
-                    .addProperty("expDate", new Schema<>().type("string")
-                            .example("2030-01-01T00:00:00.000"))
-                    .addProperty("emv", cardEmv);
+            Schema<?> requestSchema = openApi.getComponents() == null
+                    ? null
+                    : openApi.getComponents().getSchemas().get("RegressionRunRequest");
+            if (requestSchema != null && requestSchema.getProperties() != null) {
+                enrichTestsProperty(requestSchema, codes);
+                enrichTagProperty(requestSchema, tags);
+            }
 
-            ArraySchema testsSchema = new ArraySchema();
-            testsSchema.setItems(new StringSchema());
-            testsSchema.setExample(defaultTests);
-            testsSchema.setDefault(defaultTests);
-            testsSchema.setDescription("Коды тестов из БД (снимок на старте приложения)");
+            Map<String, Object> byTag = new LinkedHashMap<>();
+            byTag.put("card", sampleCard());
+            if (!tags.isEmpty()) {
+                byTag.put("regressionTag", tags.getFirst());
+            }
 
-            Schema<?> request = new Schema<>().type("object")
-                    .addProperty("card", card)
-                    .addProperty("tests", testsSchema);
+            Map<String, Object> byCodes = new LinkedHashMap<>();
+            byCodes.put("card", sampleCard());
+            byCodes.put("tests", codes);
 
-            Schema<?> response = new Schema<>().type("object")
-                    .addProperty("runId", new StringSchema().format("uuid"))
-                    .addProperty("code", new IntegerSchema().example(0)
-                            .description("0 — запуск принят"));
-
-            Map<String, Object> exampleValue = new LinkedHashMap<>();
-            Map<String, Object> cardValue = new LinkedHashMap<>();
-            cardValue.put("auth", Map.of("presence", true));
-            cardValue.put("plasticId", "15c812a5-edc4-4dd2-a842-6fd53be44369");
-            cardValue.put("cardId", "b8c89a63-3a79-4e7e-a606-8273cc8e5e4a");
-            cardValue.put("expDate", "2030-01-01T00:00:00.000");
-            cardValue.put("emv", Map.of("mbr", 90));
-            exampleValue.put("card", cardValue);
-            exampleValue.put("tests", defaultTests);
-
-            openApi.getComponents().addSchemas("RegressionRunRequest", request);
-            openApi.getComponents().addSchemas("RegressionRunResponse", response);
-            openApi.getComponents().addExamples("RegressionRunRequestExample",
-                    new Example().summary("Карта и перечень тестов").value(exampleValue));
-
-            if (openApi.getPaths() != null) {
-                openApi.getPaths().forEach((path, item) -> {
-                    if (item.getPost() != null && item.getPost().getRequestBody() != null
-                            && item.getPost().getRequestBody().getContent() != null) {
-                        item.getPost().getRequestBody().getContent().forEach((media, mediaType) -> {
-                            mediaType.setExample(exampleValue);
+            if (openApi.getPaths() != null && openApi.getPaths().get(RUN_PATH) != null
+                    && openApi.getPaths().get(RUN_PATH).getPost() != null
+                    && openApi.getPaths().get(RUN_PATH).getPost().getRequestBody() != null
+                    && openApi.getPaths().get(RUN_PATH).getPost().getRequestBody().getContent() != null) {
+                openApi.getPaths().get(RUN_PATH).getPost().getRequestBody().getContent()
+                        .forEach((media, mediaType) -> {
+                            mediaType.addExamples("byTag", new Example()
+                                    .summary("По regressionTag")
+                                    .value(byTag));
+                            mediaType.addExamples("byCodes", new Example()
+                                    .summary("По списку test_code")
+                                    .value(byCodes));
+                            mediaType.setExample(tags.isEmpty() ? byCodes : byTag);
                         });
-                    }
-                });
             }
         };
+    }
+
+    @SuppressWarnings("rawtypes")
+    private static void enrichTestsProperty(Schema<?> requestSchema, List<String> codes) {
+        Object raw = requestSchema.getProperties().get("tests");
+        if (!(raw instanceof Schema tests)) {
+            return;
+        }
+        tests.setExample(codes);
+        tests.setDescription("Коды кейсов из regression_cases (снимок на старте приложения)");
+    }
+
+    @SuppressWarnings("rawtypes")
+    private static void enrichTagProperty(Schema<?> requestSchema, List<String> tags) {
+        Object raw = requestSchema.getProperties().get("regressionTag");
+        if (!(raw instanceof Schema tag)) {
+            return;
+        }
+        tag.setDescription("Тег регресса. Доступные на старте: " + tags);
+        if (!tags.isEmpty()) {
+            tag.setExample(tags.getFirst());
+            if (tag instanceof StringSchema stringSchema) {
+                stringSchema.setEnum(new ArrayList<>(tags));
+            } else {
+                tag.setEnum(new ArrayList<>(tags));
+            }
+        }
+    }
+
+    private static Map<String, Object> sampleCard() {
+        Map<String, Object> card = new LinkedHashMap<>();
+        card.put("auth", Map.of("presence", true));
+        card.put("plasticId", "15c812a5-edc4-4dd2-a842-6fd53be44369");
+        card.put("cardId", "b8c89a63-3a79-4e7e-a606-8273cc8e5e4a");
+        card.put("expDate", "2030-01-01T00:00:00.000");
+        card.put("emv", Map.of("mbr", 90));
+        return card;
     }
 }

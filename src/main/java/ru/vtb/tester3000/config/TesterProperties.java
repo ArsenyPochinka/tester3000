@@ -5,20 +5,43 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "tester3000")
 public class TesterProperties {
 
+    /** Пауза между соседними сообщениями (событиями) внутри одного кейса, мс. */
+    private long messageDelayMs = 2000;
+
+    /** Сколько кейсов выполняется одновременно. */
+    private int parallelTests = 2;
+
     /**
-     * Delay between auth REST call and clearing Kafka publish, milliseconds.
+     * Интервал перед постановкой в очередь следующего кейса после первых {@code parallelTests}, мс.
+     * Первые {@code parallelTests} стартуют сразу.
      */
-    private long clearingDelayMs = 2000;
+    private long testStartIntervalMs = 3000;
 
     private final M210 m210 = new M210();
     private final Kafka kafka = new Kafka();
 
-    public long getClearingDelayMs() {
-        return clearingDelayMs;
+    public long getMessageDelayMs() {
+        return messageDelayMs;
     }
 
-    public void setClearingDelayMs(long clearingDelayMs) {
-        this.clearingDelayMs = clearingDelayMs;
+    public void setMessageDelayMs(long messageDelayMs) {
+        this.messageDelayMs = messageDelayMs;
+    }
+
+    public int getParallelTests() {
+        return parallelTests;
+    }
+
+    public void setParallelTests(int parallelTests) {
+        this.parallelTests = Math.max(1, parallelTests);
+    }
+
+    public long getTestStartIntervalMs() {
+        return testStartIntervalMs;
+    }
+
+    public void setTestStartIntervalMs(long testStartIntervalMs) {
+        this.testStartIntervalMs = Math.max(0, testStartIntervalMs);
     }
 
     public M210 getM210() {
@@ -33,9 +56,6 @@ public class TesterProperties {
         private String baseUrl = "http://127.0.0.1:8080";
         private String path = "/api/1.1.0/prod_auth/_request";
         private String mdmId = "tester3000";
-        /**
-         * If true, exposes an in-process stub of m210 at the same path.
-         */
         private boolean stubEnabled = true;
 
         public String getBaseUrl() {

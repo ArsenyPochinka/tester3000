@@ -41,8 +41,11 @@ public class RegressionController {
     )
     @Operation(
             summary = "Запустить регресс",
-            description = "Берёт выбранные тесты из БД, формирует сообщения и сразу возвращает runId. "
-                    + "Отправка в m210/Kafka и обработка outbox выполняются в фоне."
+            description = "Кейсы из regression_cases по tests и/или regressionTag. "
+                    + "Параллельность и интервалы — из конфига (parallel-tests, test-start-interval-ms). "
+                    + "Внутри кейса: слоты auth/clr (+ add_*), пауза message-delay-ms; "
+                    + "ошибка auth останавливает оставшиеся сообщения кейса. "
+                    + "Сразу возвращает runId."
     )
     public RegressionRunResponse run(@Valid @RequestBody RegressionRunRequest request) {
         return regressionService.run(request);
@@ -51,7 +54,7 @@ public class RegressionController {
     @GetMapping(path = "/report/{runId}", produces = MediaType.TEXT_HTML_VALUE)
     @Operation(
             summary = "HTML-отчёт по прогону",
-            description = "Формирует HTML-отчёт по конкретному run_id: тесты, шаги process и payload'ы."
+            description = "HTML-отчёт: primary auth/clr и шаги process по run_id."
     )
     @ApiResponse(
             responseCode = "200",

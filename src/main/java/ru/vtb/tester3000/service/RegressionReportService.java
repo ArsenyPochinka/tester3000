@@ -14,6 +14,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -90,23 +91,15 @@ public class RegressionReportService {
         html.append("</div></header>");
 
         html.append("<main>");
-        List<String> testOrder = new ArrayList<>();
+        Map<String, RegressionTestMessageEntity> messageByTest = new LinkedHashMap<>();
         for (RegressionTestMessageEntity msg : messages) {
-            if (!testOrder.contains(msg.getTestName())) {
-                testOrder.add(msg.getTestName());
-            }
+            messageByTest.putIfAbsent(msg.getTestName(), msg);
         }
-        for (String name : byTest.keySet()) {
-            if (!testOrder.contains(name)) {
-                testOrder.add(name);
-            }
-        }
+        LinkedHashSet<String> testOrder = new LinkedHashSet<>(messageByTest.keySet());
+        testOrder.addAll(byTest.keySet());
 
         for (String testName : testOrder) {
-            RegressionTestMessageEntity msg = messages.stream()
-                    .filter(m -> testName.equals(m.getTestName()))
-                    .findFirst()
-                    .orElse(null);
+            RegressionTestMessageEntity msg = messageByTest.get(testName);
             List<ProcessEntity> steps = byTest.getOrDefault(testName, List.of()).stream()
                     .sorted(Comparator.comparing(ProcessEntity::getCreatedAt))
                     .toList();
@@ -117,7 +110,11 @@ public class RegressionReportService {
                 html.append("<p class=\"sub\">message_id: <code>").append(esc(msg.getId().toString())).append("</code>");
                 html.append(" · создан: ").append(esc(TIME_FMT.format(msg.getCreatedAt()))).append("</p>");
                 html.append("<div class=\"payloads\">");
-                html.append(payloadBlock("Auth", msg.getAuthMessage()));
+                if (msg.getAuthMessage() != null && !msg.getAuthMessage().isBlank()) {
+                    html.append(payloadBlock("Auth", msg.getAuthMessage()));
+                } else {
+                    html.append("<p class=\"muted\">Auth отсутствует</p>");
+                }
                 if (msg.getClearingMessage() != null && !msg.getClearingMessage().isBlank()) {
                     html.append(payloadBlock("Clearing", msg.getClearingMessage()));
                 } else {

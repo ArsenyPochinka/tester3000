@@ -157,9 +157,6 @@ public class SchemaPruner {
                     required.add(req.deepCopy());
                 }
             }
-            if (!resolved.has("properties") && "object".equals(resolved.path("type").asText(null))) {
-                // bare object in allOf — don't force additionalProperties false alone
-            }
         }
         merged.put("additionalProperties", additional);
         return merged;

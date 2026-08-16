@@ -21,10 +21,14 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 
 /**
- * Маппинг сырых сообщений из БД на контракты m210 / m095.
- * Форма результата определяется JSON Schema из {@code contract/schemas}
- * (schema-guided projection): новые атрибуты схемы подхватываются автоматически,
- * если они присутствуют во входном сообщении.
+ * Маппинг сообщений из БД на контракты m210 / m095.
+ * <p>
+ * Поддерживаются оба формата входа:
+ * <ul>
+ *   <li>сырой JSON как в m025 (лишние поля отрезаются schema-guided projection);</li>
+ *   <li>уже сформированное сообщение по схемам m210 / m095 — параметризуется так же
+ *       (card, rId, linkage, даты).</li>
+ * </ul>
  */
 @Component
 public class MessageMapper {

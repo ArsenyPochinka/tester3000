@@ -1,4 +1,4 @@
--- seed data for test_messages_from_25
+-- seed data for regression_cases (историческое имя таблицы: test_messages_from_25)
 INSERT INTO test_messages_from_25 (test_cod, test_description, auth, clr) VALUES
   ('test_CASH_original_auth', 'CASH original auth', $jtestCASHoriginalauthauth${
     "rId": "a4db97e8-7b13-4d14-8061-a3bd4fabb2c9",
