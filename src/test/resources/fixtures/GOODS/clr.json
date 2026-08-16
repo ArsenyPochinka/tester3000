@@ -1,0 +1,129 @@
+{
+    "systemCode": "2218",
+    "msName": "m095",
+    "cbiRequest": {
+        "tranRequest": {
+            "parties": {
+                "term": {
+                    "caps": {
+                        "icc": true,
+                        "keyEntry": false,
+                        "contactless": true,
+                        "magRead": false,
+                        "ocr": false,
+                        "barCode": false
+                    },
+                    "owner": {
+                        "mcc": 5541,
+                        "title": "IRBIS",
+                        "city": "NABEREZHNYE C",
+                        "country": 643,
+                        "zip": "00000",
+                        "rid": "30021680",
+                        "documents": {
+                            "document": [
+                                {}
+                            ]
+                        }
+                    },
+                    "rid": "50029282",
+                    "type": "Pos",
+                    "acquirerRid": "465882"
+                },
+                "cust": {
+                    "token": [
+                        {
+                            "card": {
+                                "entryMode": "IccContactless",
+                                "cardId": "b8c89a63-3a79-4e7e-a606-8273cc8e5e4a"
+                            },
+                            "kind": "Card"
+                        }
+                    ],
+                    "auth": {
+                        "signChecked": false,
+                        "tdsChecked": false
+                    },
+                    "presence": false,
+                    "organization": {
+                        "documents": {
+                            "document": [
+                                {}
+                            ]
+                        },
+                        "ccyResidenceCountries": []
+                    }
+                },
+                "payee": {
+                    "card": {},
+                    "owner": {
+                        "documents": {
+                            "document": [
+                                {}
+                            ]
+                        },
+                        "ccyResidenceCountries": []
+                    }
+                }
+            },
+            "link": [
+                {
+                    "key": "E34406DFFC7E181B6A012D954FA148FDF4A5BDD3260811371294331649",
+                    "nrn": "746223040588705"
+                }
+            ],
+            "match": {
+                "key": "838e0f4320134748af3afd57eac8f5b3"
+            },
+            "moneys": {
+                "clear": {
+                    "amt": 2122.5,
+                    "ccy": 643
+                },
+                "cust": {
+                    "amt": 2122.5,
+                    "ccy": 643
+                }
+            },
+            "specific": {
+                "multiclearing": false,
+                "isFinalPayment": false,
+                "payment": {}
+            },
+            "userAttrs": {
+                "paramValue": [
+                    {
+                        "val": "74658826224135649166305",
+                        "rid": "ARN"
+                    },
+                    {
+                        "val": "VISA",
+                        "rid": "MK_Inc_Channel"
+                    },
+                    {
+                        "val": "050",
+                        "rid": "MK_Inc_ProcCode"
+                    }
+                ]
+            },
+            "localTime": "2026-08-11T00:00:00.000",
+            "undoState": "Normal",
+            "kind": "Goods",
+            "lifePhase": "Presentment",
+            "isReversal": false,
+            "isPartial": false,
+            "isAdvice": true,
+            "approvalCode": "ZUFFBF"
+        }
+    },
+    "lmdAttrs": {
+        "system": "CCOP",
+        "version": 1,
+        "createTime": "2026-08-12T11:32:25.513985+03:00",
+        "updateTime": "2026-08-12T11:32:25.516697616+03:00"
+    },
+    "status": {
+        "operationStatus": "Received"
+    },
+    "rId": "a797ae70-6557-4fd7-8e02-5776f46231dc"
+}

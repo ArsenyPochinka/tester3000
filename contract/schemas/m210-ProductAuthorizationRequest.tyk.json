@@ -1,0 +1,1598 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "m210.ProductAuthorizationRequest.tyk",
+  "title": "m210 ProductAuthorizationRequest (TYK OpenAPI)",
+  "description": "Converted from src/main/resources/openapi/tyk.yml implementation. Service tag 0.0.15.0.6. Not from product docs.",
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "#/definitions/ProductAuthorizationRequest"
+    }
+  ],
+  "definitions": {
+    "CbiRequest": {
+      "type": "object",
+      "required": [
+        "tranRequest"
+      ],
+      "properties": {
+        "tranRequest": {
+          "$ref": "#/definitions/TransactionRequest"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Запрос в формате CBI"
+    },
+    "TransactionRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "parties",
+        "kind",
+        "lifePhase",
+        "localTime",
+        "userAttrs"
+      ],
+      "properties": {
+        "parties": {
+          "$ref": "#/definitions/Parties"
+        },
+        "match": {
+          "$ref": "#/definitions/Match"
+        },
+        "moneys": {
+          "$ref": "#/definitions/Moneys"
+        },
+        "userAttrs": {
+          "$ref": "#/definitions/UserAttrs"
+        },
+        "preprocessOnly": {
+          "type": "boolean"
+        },
+        "specific": {
+          "$ref": "#/definitions/Specific"
+        },
+        "networkSpecific": {
+          "$ref": "#/definitions/NetworkSpecific"
+        },
+        "localTime": {
+          "type": "string",
+          "description": "Локальное время транзакции",
+          "pattern": "^\\d{4}-[01]\\d-[0-3]\\dT[012]\\d:[012345]\\d:[012345]\\d.\\d{3}$"
+        },
+        "originatorDay": {
+          "type": "string",
+          "description": "День инициации транзакции",
+          "pattern": "^\\d{4}-[01]\\d-[0-3]\\dT[012]\\d:[012345]\\d:[012345]\\d.\\d{3}$"
+        },
+        "kind": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "Goods",
+          "description": "Тип транзакции"
+        },
+        "lifePhase": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "Auth",
+          "description": "Фаза жизненного цикла транзакции"
+        },
+        "isBackward": {
+          "type": "boolean",
+          "description": "Флаг обратной транзакции"
+        },
+        "isReversal": {
+          "type": "boolean",
+          "description": "Флаг реверса"
+        },
+        "isPartial": {
+          "type": "boolean",
+          "description": "Флаг частичного выполнения"
+        },
+        "isAdvice": {
+          "type": "boolean",
+          "description": "Флаг совета"
+        },
+        "link": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "$ref": "#/definitions/Link"
+          },
+          "description": "Связанные транзакции"
+        },
+        "undoState": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "Normal"
+        },
+        "linkedData": {
+          "$ref": "#/definitions/LinkedData"
+        },
+        "version": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "3.2.42.10.19"
+        },
+        "approvalCode": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "AQ6FM9",
+          "description": "Код одобрения"
+        },
+        "result": {
+          "type": "string",
+          "maxLength": 255
+        }
+      }
+    },
+    "LinkedData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "moneys"
+      ],
+      "properties": {
+        "linkedRId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "description": "Идентификатор операции, с которой была установлена связь"
+        },
+        "moneys": {
+          "$ref": "#/definitions/Moneys"
+        },
+        "moneysOriginal": {
+          "$ref": "#/definitions/Moneys"
+        },
+        "localTimeOriginal": {
+          "type": "string",
+          "pattern": "^\\d{4}-[01]\\d-[0-3]\\dT[012]\\d:[012345]\\d:[012345]\\d.\\d{3}$"
+        },
+        "anomalTypeOriginal": {
+          "type": "string",
+          "enum": [
+            "NONE",
+            "SZ",
+            "OK",
+            "DB"
+          ]
+        },
+        "isReversal": {
+          "type": "boolean",
+          "description": "Признак того, что транзакция является реверсом"
+        }
+      }
+    },
+    "Parties": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "term"
+      ],
+      "properties": {
+        "term": {
+          "$ref": "#/definitions/Terminal"
+        },
+        "cust": {
+          "$ref": "#/definitions/Customer"
+        },
+        "payee": {
+          "$ref": "#/definitions/Payee"
+        }
+      }
+    },
+    "Payee": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "usePayerToken": {
+          "type": "boolean"
+        },
+        "type": {
+          "type": "string",
+          "maxLength": 255
+        },
+        "owner": {
+          "$ref": "#/definitions/OrganizationInfo"
+        },
+        "card": {
+          "$ref": "#/definitions/PayeeCard"
+        }
+      }
+    },
+    "OrganizationBase": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "rid": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "9296405491",
+          "description": "Идентификатор владельца"
+        },
+        "mcc": {
+          "type": "integer",
+          "format": "int64",
+          "minimum": 0,
+          "maximum": 9999,
+          "example": 5200,
+          "description": "Код категории мерчанта"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "LEMANAPRO_RSB_***",
+          "description": "Название компании"
+        },
+        "city": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "PETROZAVODSK",
+          "description": "Город"
+        },
+        "country": {
+          "type": "integer",
+          "format": "int64",
+          "minimum": 0,
+          "maximum": 999,
+          "example": 643,
+          "description": "Код страны"
+        },
+        "zip": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "185014",
+          "description": "Почтовый индекс"
+        },
+        "streetAddress": {
+          "type": "string",
+          "maxLength": 255,
+          "description": "Адрес"
+        },
+        "ccyResidenceCountries": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0,
+            "maximum": 999
+          }
+        },
+        "documents": {
+          "type": "object",
+          "title": "OrganizationDocuments",
+          "additionalProperties": false,
+          "properties": {
+            "document": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "$ref": "#/definitions/Document"
+              }
+            }
+          }
+        },
+        "foreign": {
+          "type": "boolean"
+        }
+      }
+    },
+    "OrganizationInfo": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ccyResidenceCountries": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0,
+            "maximum": 999
+          }
+        },
+        "documents": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "document": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "$ref": "#/definitions/Document"
+              }
+            }
+          }
+        }
+      }
+    },
+    "Document": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "maxLength": 255
+        },
+        "value": {
+          "type": "string",
+          "maxLength": 255
+        },
+        "issueCountryId": {
+          "type": "integer",
+          "format": "int64",
+          "minimum": 0,
+          "maximum": 999
+        }
+      }
+    },
+    "PayeeCard": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "maskedPan": {
+          "type": "string",
+          "maxLength": 255
+        },
+        "cardFromTemplateTran": {
+          "type": "boolean"
+        }
+      }
+    },
+    "Terminal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "acquirerRid"
+      ],
+      "properties": {
+        "owner": {
+          "$ref": "#/definitions/TerminalOwner"
+        },
+        "caps": {
+          "$ref": "#/definitions/Caps"
+        },
+        "rid": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "26333372",
+          "description": "Уникальный идентификатор терминала"
+        },
+        "type": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "Pos",
+          "description": "Тип терминала"
+        },
+        "acquirerRid": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "009141",
+          "description": "Идентификатор эквайера"
+        },
+        "acquirerCountry": {
+          "type": "integer",
+          "format": "int64",
+          "minimum": 0,
+          "maximum": 999
+        }
+      }
+    },
+    "TerminalOwner": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mcc"
+      ],
+      "properties": {
+        "rid": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "9296405491",
+          "description": "Идентификатор владельца"
+        },
+        "mcc": {
+          "type": "integer",
+          "format": "int64",
+          "minimum": 0,
+          "maximum": 9999,
+          "example": 5200,
+          "description": "Код категории мерчанта"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "LEMANAPRO_RSB_***",
+          "description": "Название компании"
+        },
+        "city": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "PETROZAVODSK",
+          "description": "Город"
+        },
+        "country": {
+          "type": "integer",
+          "format": "int64",
+          "minimum": 0,
+          "maximum": 999,
+          "example": 643,
+          "description": "Код страны"
+        },
+        "zip": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "185014",
+          "description": "Почтовый индекс"
+        },
+        "streetAddress": {
+          "type": "string",
+          "maxLength": 255,
+          "description": "Адрес"
+        },
+        "documents": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "document": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "$ref": "#/definitions/Document"
+              }
+            }
+          }
+        },
+        "subMerchant": {
+          "$ref": "#/definitions/OrganizationBase"
+        }
+      }
+    },
+    "Caps": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "icc": {
+          "type": "boolean",
+          "description": "Поддержка чиповых карт"
+        },
+        "keyEntry": {
+          "type": "boolean",
+          "description": "Поддержка ручного ввода"
+        },
+        "contactless": {
+          "type": "boolean",
+          "description": "Поддержка бесконтактных платежей"
+        },
+        "magRead": {
+          "type": "boolean",
+          "description": "Возможность чтения магнитной полосы"
+        },
+        "magWrite": {
+          "type": "boolean",
+          "description": "Возможность записи на магнитную полосу"
+        },
+        "ocr": {
+          "type": "boolean",
+          "description": "Оптическое распознавание"
+        },
+        "singleTap": {
+          "type": "boolean",
+          "description": "Поддержка однократного касания"
+        },
+        "barCode": {
+          "type": "boolean",
+          "description": "Поддержка штрих-кодов"
+        },
+        "pin": {
+          "type": "boolean",
+          "description": "Поддержка ввода PIN-кода"
+        },
+        "maxPinLen": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 12,
+          "description": "Максимальная длина PIN-кода"
+        },
+        "signAnalysis": {
+          "type": "boolean",
+          "description": "Анализ подписи"
+        },
+        "cardCapture": {
+          "type": "boolean",
+          "description": "Возможность изъятия карты"
+        },
+        "attendance": {
+          "type": "boolean",
+          "description": "Требуется присутствие оператора"
+        },
+        "mpos": {
+          "type": "boolean",
+          "description": "Мобильный POS"
+        },
+        "mobile": {
+          "type": "boolean",
+          "description": "Мобильное устройство"
+        },
+        "dsrp": {
+          "type": "boolean",
+          "description": "Поддержка DSRP"
+        },
+        "interactive": {
+          "type": "boolean",
+          "description": "Интерактивный режим"
+        },
+        "goodsAuthOnly": {
+          "type": "boolean",
+          "description": "Только продуктовая авторизация"
+        },
+        "partialApproval": {
+          "type": "boolean",
+          "description": "Частичное одобрение"
+        }
+      }
+    },
+    "Customer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "token"
+      ],
+      "properties": {
+        "presence": {
+          "type": "boolean",
+          "description": "Присутствие клиента"
+        },
+        "signChecked": {
+          "type": "boolean",
+          "description": "Проверка подписи"
+        },
+        "tdsChecked": {
+          "type": "boolean",
+          "description": "Проверка 3D Secure"
+        },
+        "token": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 100,
+          "items": {
+            "$ref": "#/definitions/Token"
+          },
+          "description": "Токен клиента"
+        },
+        "organization": {
+          "$ref": "#/definitions/OrganizationInfo"
+        }
+      }
+    },
+    "Token": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "card",
+        "kind"
+      ],
+      "properties": {
+        "card": {
+          "$ref": "#/definitions/CardToken"
+        },
+        "kind": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "Card",
+          "description": "Тип токена"
+        }
+      }
+    },
+    "CardToken": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cardId"
+      ],
+      "properties": {
+        "tds": {
+          "type": "object",
+          "properties": {
+            "condition": {
+              "type": "string",
+              "maxLength": 255,
+              "description": "Условия 3D Secure"
+            }
+          },
+          "additionalProperties": false
+        },
+        "auth": {
+          "type": "object",
+          "properties": {
+            "presence": {
+              "type": "boolean",
+              "description": "Наличие CVV"
+            },
+            "pinChecked": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "emv": {
+          "type": "object",
+          "properties": {
+            "mbr": {
+              "type": "integer",
+              "description": "Mobile Banking Reference",
+              "format": "int64",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "additionalProperties": false
+        },
+        "cardId": {
+          "type": "string",
+          "maxLength": 255,
+          "description": "Идентификатор карты"
+        },
+        "plasticId": {
+          "type": "string",
+          "maxLength": 255,
+          "description": "Идентификатор пластика"
+        },
+        "expDate": {
+          "type": "string",
+          "description": "Срок действия карты",
+          "pattern": "^\\d{4}-[01]\\d-[0-3]\\dT[012]\\d:[012345]\\d:[012345]\\d.\\d{3}$"
+        },
+        "entryMode": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "Icc",
+          "description": "Способ ввода карты"
+        }
+      }
+    },
+    "Moneys": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "clear": {
+          "$ref": "#/definitions/Money"
+        },
+        "cust": {
+          "$ref": "#/definitions/CustMoney"
+        }
+      }
+    },
+    "Match": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "rrn": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "123456789012",
+          "description": "Retrieval Reference Number"
+        },
+        "key": {
+          "type": "string",
+          "maxLength": 255
+        },
+        "nrn": {
+          "type": "string",
+          "maxLength": 255
+        },
+        "acquirerRid": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "009141",
+          "description": "Идентификатор эквайера"
+        }
+      }
+    },
+    "Surcharges": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "externalAmt": {
+          "type": "number",
+          "format": "double",
+          "example": 127.86,
+          "description": "Сумма",
+          "minimum": 0,
+          "maximum": 99007199254741000
+        }
+      }
+    },
+    "CustMoney": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ccy"
+      ],
+      "properties": {
+        "cashbackAmt": {
+          "type": "number",
+          "format": "double",
+          "example": 127.86,
+          "description": "Сумма",
+          "minimum": 0,
+          "maximum": 99007199254741000
+        },
+        "amt": {
+          "type": "number",
+          "format": "double",
+          "example": 127.86,
+          "description": "Сумма",
+          "minimum": 0,
+          "maximum": 99007199254741000
+        },
+        "ccy": {
+          "type": "integer",
+          "example": 840,
+          "description": "Код валюты",
+          "format": "int64",
+          "minimum": 0,
+          "maximum": 999
+        },
+        "convRate": {
+          "type": "number",
+          "format": "double",
+          "example": 0.0103188,
+          "description": "Курс конвертации",
+          "minimum": 0,
+          "maximum": 99007199254741000
+        },
+        "convDate": {
+          "type": "string",
+          "description": "Дата конвертации",
+          "pattern": "^\\d{4}-[01]\\d-[0-3]\\dT[012]\\d:[012345]\\d:[012345]\\d.\\d{3}$"
+        },
+        "prevAmt": {
+          "type": "number",
+          "format": "double",
+          "example": 127.86,
+          "description": "Сумма",
+          "minimum": 0,
+          "maximum": 99007199254741000
+        },
+        "surcharges": {
+          "$ref": "#/definitions/Surcharges"
+        }
+      }
+    },
+    "Money": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ccy"
+      ],
+      "properties": {
+        "cashbackAmt": {
+          "type": "number",
+          "format": "double",
+          "example": 127.86,
+          "description": "Сумма",
+          "minimum": 0,
+          "maximum": 99007199254741000
+        },
+        "amt": {
+          "type": "number",
+          "format": "double",
+          "example": 127.86,
+          "description": "Сумма",
+          "minimum": 0,
+          "maximum": 99007199254741000
+        },
+        "ccy": {
+          "type": "integer",
+          "example": 840,
+          "description": "Код валюты",
+          "format": "int64",
+          "minimum": 0,
+          "maximum": 999
+        },
+        "convRate": {
+          "type": "number",
+          "format": "double",
+          "example": 0.0103188,
+          "description": "Курс конвертации",
+          "minimum": 0,
+          "maximum": 99007199254741000
+        },
+        "convDate": {
+          "type": "string",
+          "description": "Дата конвертации",
+          "pattern": "^\\d{4}-[01]\\d-[0-3]\\dT[012]\\d:[012345]\\d:[012345]\\d.\\d{3}$"
+        },
+        "prevAmt": {
+          "type": "number",
+          "format": "double",
+          "example": 127.86,
+          "description": "Сумма",
+          "minimum": 0,
+          "maximum": 99007199254741000
+        }
+      }
+    },
+    "ProductAuthorizationRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rId",
+        "userAgent",
+        "systemCode",
+        "ip",
+        "cbiRequest",
+        "msName"
+      ],
+      "properties": {
+        "rId": {
+          "$ref": "#/definitions/Rid"
+        },
+        "userAgent": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "RadixWare",
+          "description": "Описание устройства клиента API"
+        },
+        "systemCode": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "2218",
+          "description": "РИС код системы, инициирующей вызов"
+        },
+        "ip": {
+          "type": "string",
+          "description": "IP адрес вызывающего",
+          "example": "1.0.8.23",
+          "maxLength": 255
+        },
+        "cbiRequest": {
+          "$ref": "#/definitions/CbiRequest"
+        },
+        "stornoAdditionalAttributes": {
+          "$ref": "#/definitions/StornoAdditionalAttributes"
+        },
+        "msName": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "m263",
+          "description": "Система-источник входящего сообщения"
+        }
+      }
+    },
+    "Rid": {
+      "type": "string",
+      "example": "eaac2a18-7a87-4cbf-bf1b-fcb3b69a846c",
+      "description": "Идентификатор запроса в формате UUID v4",
+      "pattern": "^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$"
+    },
+    "UserAttrs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "paramValue"
+      ],
+      "properties": {
+        "paramValue": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "$ref": "#/definitions/ParamValues"
+          },
+          "description": "Значения параметров"
+        },
+        "mode": {
+          "type": "string",
+          "description": "Режим обработки",
+          "enum": [
+            "Sync",
+            "Change"
+          ]
+        },
+        "seq": {
+          "type": "integer",
+          "format": "int64",
+          "description": "Порядковый номер",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      }
+    },
+    "ParamValues": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rid",
+        "val"
+      ],
+      "properties": {
+        "rid": {
+          "type": "string",
+          "description": "Идентификатор параметра",
+          "maxLength": 255
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 255
+        },
+        "val": {
+          "type": "string",
+          "description": "Значение параметра",
+          "maxLength": 255
+        }
+      }
+    },
+    "Link": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "key"
+      ],
+      "properties": {
+        "rrn": {
+          "type": "string",
+          "description": "Retrieval Reference Number",
+          "maxLength": 255
+        },
+        "key": {
+          "type": "string",
+          "maxLength": 255
+        },
+        "nrn": {
+          "type": "string",
+          "maxLength": 255
+        }
+      }
+    },
+    "NetworkSpecific": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "visa": {
+          "$ref": "#/definitions/VisaNetworkSpecific"
+        },
+        "masterCard": {
+          "$ref": "#/definitions/MasterCardNetworkSpecific"
+        },
+        "way4": {
+          "$ref": "#/definitions/Way4NetworkSpecific"
+        },
+        "nspk": {
+          "$ref": "#/definitions/NspkNetworkSpecific"
+        }
+      }
+    },
+    "NspkNetworkSpecific": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "trn": {
+          "type": "integer",
+          "format": "int64",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "posData": {
+          "type": "string",
+          "maxLength": 255
+        },
+        "messageType": {
+          "type": "integer",
+          "format": "int64",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "posEntryMode": {
+          "type": "string",
+          "maxLength": 255
+        }
+      }
+    },
+    "Way4NetworkSpecific": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "w4_47_925": {
+          "type": "string",
+          "maxLength": 255
+        },
+        "w4_47_958": {
+          "type": "string",
+          "maxLength": 255
+        }
+      }
+    },
+    "VisaNetworkSpecific": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "tranId": {
+          "type": "string",
+          "maxLength": 255
+        },
+        "businessApplicationId": {
+          "type": "string",
+          "maxLength": 255
+        }
+      }
+    },
+    "MasterCardNetworkSpecific": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "posCondition": {
+          "type": "string",
+          "maxLength": 255
+        },
+        "traceId": {
+          "type": "string",
+          "maxLength": 255
+        }
+      }
+    },
+    "Specific": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "custInfo": {
+          "$ref": "#/definitions/CustInfo"
+        },
+        "payment": {
+          "$ref": "#/definitions/Payment"
+        },
+        "fastFunds": {
+          "type": "boolean"
+        },
+        "reversalReason": {
+          "type": "string",
+          "maxLength": 255
+        },
+        "prepurchase": {
+          "type": "boolean"
+        },
+        "digitization": {
+          "$ref": "#/definitions/Digitization"
+        },
+        "condition": {
+          "type": "string",
+          "maxLength": 255
+        },
+        "interchangeReason": {
+          "type": "string",
+          "maxLength": 255
+        }
+      }
+    },
+    "Digitization": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "deviceInfo": {
+          "$ref": "#/definitions/DigitizationDeviceInfo"
+        }
+      }
+    },
+    "DigitizationDeviceInfo": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "integer",
+          "format": "int32",
+          "minimum": 0,
+          "maximum": 1024
+        }
+      }
+    },
+    "SubjectDocListFilter": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "docKindList": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "string",
+            "maxLength": 255
+          }
+        }
+      }
+    },
+    "Payment": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "purposeText": {
+          "type": "string",
+          "maxLength": 255
+        },
+        "operType": {
+          "type": "string",
+          "maxLength": 255
+        }
+      }
+    },
+    "CustInfo": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "subjectDocListFilter": {
+          "$ref": "#/definitions/SubjectDocListFilter"
+        },
+        "kinds": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "string",
+            "maxLength": 255
+          }
+        }
+      }
+    },
+    "StornoAdditionalAttributes": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "stornoDocId": {
+          "type": "string",
+          "maxLength": 255,
+          "description": "ID/GUID ошибочного документа"
+        },
+        "stornoNDoc": {
+          "type": "string",
+          "maxLength": 255,
+          "description": "Номер ошибочного документа"
+        },
+        "stornoDesc": {
+          "type": "string",
+          "maxLength": 255,
+          "description": "Назначение платежа ошибочного документа"
+        },
+        "stornoYear": {
+          "type": "string",
+          "pattern": "^\\d{4}$",
+          "description": "Год ошибочной записи"
+        },
+        "stornoDocDate": {
+          "type": "string",
+          "pattern": "^\\d{4}.[01]\\d.[0-3]\\d$",
+          "description": "Дата ошибочного документа"
+        },
+        "stornoDebit": {
+          "type": "string",
+          "pattern": "^\\d{20}$",
+          "description": "20-й счет дт ошибочного документа"
+        },
+        "stornoCredit": {
+          "type": "string",
+          "pattern": "^\\d{20}$",
+          "description": "20-й счет кт ошибочного документа"
+        },
+        "stornoSumVal": {
+          "type": "number",
+          "format": "double",
+          "example": 127.86,
+          "description": "Сумма в валюте ошибочного документа",
+          "minimum": 0,
+          "maximum": 99007199254741000
+        },
+        "stornoSumRub": {
+          "type": "number",
+          "format": "double",
+          "example": 127.86,
+          "description": "Сумма, рублевый жквивалент ошибочного документа",
+          "minimum": 0,
+          "maximum": 99007199254741000
+        },
+        "stornoOperator": {
+          "type": "string",
+          "maxLength": 255,
+          "description": "ФИО исполнителя исправительного документа"
+        },
+        "stornoController": {
+          "type": "string",
+          "maxLength": 255,
+          "description": "ФИО 1 контролера исправительного документа"
+        },
+        "stornoController2": {
+          "type": "string",
+          "maxLength": 255,
+          "description": "ФИО 2 контролера исправительного документа"
+        },
+        "stornoDept": {
+          "type": "string",
+          "maxLength": 255,
+          "description": "Ответственное подразделение ошибочного документа"
+        },
+        "stornoErrOperator": {
+          "type": "string",
+          "maxLength": 255,
+          "description": "ФИО исполнителя ошибочного документа"
+        },
+        "stornoErrController": {
+          "type": "string",
+          "maxLength": 255,
+          "description": "ФИО контролера ошибочного документа"
+        },
+        "stornoReasonDesc": {
+          "type": "string",
+          "maxLength": 255,
+          "description": "Дополнительное описание причины ошибки"
+        },
+        "stornoReasonCode": {
+          "type": "string",
+          "enum": [
+            "BNK_LIQUID",
+            "PART",
+            "CLIENT",
+            "FILIAL",
+            "DEPART_GO",
+            "DEPART_INF",
+            "ERR_COMM",
+            "IN_OTHER",
+            "EXC_INTEREST",
+            "NOT_REFLECT",
+            "UNRES_REFLECT",
+            "INCORRECT_CURS",
+            "INCORRECT_ACC",
+            "INCORRECT_SUM",
+            "INCORRECT_VAL",
+            "REGULATIONS",
+            "INSTRUCTIONS",
+            "TECHNICAL",
+            "CORRECT_OLD_PERIOD",
+            "CLIENT_REQ"
+          ]
+        }
+      }
+    },
+    "ProductAuthorizationResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operationStatus",
+        "operationPayload"
+      ],
+      "properties": {
+        "operationStatus": {
+          "$ref": "#/definitions/OperationStatus"
+        },
+        "operationStatusData": {
+          "$ref": "#/definitions/OperationStatusData"
+        },
+        "operationPayload": {
+          "$ref": "#/definitions/OperationPayload"
+        }
+      }
+    },
+    "OperationStatus": {
+      "type": "string",
+      "enum": [
+        "PLANNED",
+        "STARTED",
+        "COMPLETED",
+        "OK",
+        "ERROR",
+        "PREPARED",
+        "CANCELLED",
+        "REJECTED",
+        "UNDO",
+        "UNDO_ERROR",
+        "SKIPPED",
+        "ROLLBACK",
+        "COMMITED",
+        "PROCESSING"
+      ],
+      "example": "COMPLETED",
+      "description": "Статус выполнения операции"
+    },
+    "OperationStatusData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "statusCode",
+        "statusMsg"
+      ],
+      "properties": {
+        "statusCode": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "M210_0001",
+          "description": "Код статуса"
+        },
+        "statusMsg": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "Transaction approved",
+          "description": "Сообщение статуса"
+        }
+      }
+    },
+    "CustInfoItemAttribute": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "maxLength": 255
+        },
+        "strVal": {
+          "type": "string",
+          "maxLength": 255
+        },
+        "numVal": {
+          "type": "number",
+          "format": "double",
+          "example": 127.86,
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "intVal": {
+          "type": "integer",
+          "format": "int64",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "boolVal": {
+          "type": "boolean"
+        },
+        "dateTimeVal": {
+          "type": "string",
+          "pattern": "^\\d{4}-[01]\\d-[0-3]\\dT[012]\\d:[012345]\\d:[012345]\\d.\\d{3}$"
+        },
+        "arrIntVal": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "arrNumVal": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "number",
+            "format": "double",
+            "example": 127.86,
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "arrStrVal": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "string",
+            "maxLength": 255
+          }
+        },
+        "arrBoolVal": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "boolean"
+          }
+        },
+        "arrDateTimeVal": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "string",
+            "pattern": "^\\d{4}-[01]\\d-[0-3]\\dT[012]\\d:[012345]\\d:[012345]\\d.\\d{3}$"
+          }
+        }
+      }
+    },
+    "CustInfoItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "attribute": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "$ref": "#/definitions/CustInfoItemAttribute"
+          }
+        }
+      }
+    },
+    "CustInfoResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "maxLength": 255
+        },
+        "item": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "$ref": "#/definitions/CustInfoItem"
+          }
+        }
+      }
+    },
+    "OperationPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rId",
+        "transactionResult"
+      ],
+      "properties": {
+        "rId": {
+          "$ref": "#/definitions/Rid"
+        },
+        "systemCode": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "2218",
+          "description": "Код системы"
+        },
+        "transactionResult": {
+          "type": "string",
+          "enum": [
+            "Aborted",
+            "AccountIsClosed",
+            "AccountTransferred",
+            "AcquirerLimitHasBeenReached",
+            "AcquirerLimitWillBeExceeded",
+            "AcquirerRestrictionViolated",
+            "Approved",
+            "ArqcAuthFailed",
+            "AuthenticationFailed",
+            "CallbackAuthFailed",
+            "CallbackTryExceeded",
+            "CantFindContract",
+            "CapAuthenticationFailed",
+            "CapTryExceeded",
+            "CavvAuthFailed",
+            "CofConsentRevoked",
+            "ContractDayClosed",
+            "ContractIsBlocked",
+            "ContractIsClosed",
+            "ContractIsNotStarted",
+            "ContractIsRestricted",
+            "CustContractNotFound",
+            "CustTokenInvalid",
+            "CustTokenInvalidExp",
+            "CustTokenNotFound",
+            "CustomerDisagreement",
+            "Cvv2AuthFailed",
+            "Cvv2TryExceeded",
+            "CvvAuthFailed",
+            "DestNotAvail",
+            "DuplicateRequest",
+            "ExceptionalCardNotFound",
+            "ExtCardAlreadyRegistered",
+            "ExtCardNotFound",
+            "ExtCardRegistrationError",
+            "FormatError",
+            "HighRisk",
+            "InstitutionDayClosed",
+            "InsufficientAuth",
+            "InsufficientFunds",
+            "InternetPinAuthFailed",
+            "InternetPinTryExceeded",
+            "InvalidAmount",
+            "InvalidBill",
+            "InvalidContract",
+            "InvalidContractLink",
+            "InvalidCustomer",
+            "InvalidLink",
+            "InvalidMandate",
+            "InvalidRequest",
+            "InvalidResponse",
+            "IssuerLimitHasBeenReached",
+            "IssuerLimitWillBeExceeded",
+            "IssuerRestrictionViolated",
+            "LoginAlreadyRegistered",
+            "LoginPasswordExpired",
+            "LoginPasswordWasUsed",
+            "MacError",
+            "NeedConfirmCcyConversion",
+            "NeedConfirmDcc",
+            "NeedConfirmDccAndSurcharges",
+            "NeedConfirmFinPlan",
+            "NeedConfirmSurcharges",
+            "NeedCorrection",
+            "NeedRefine",
+            "PartyNotExists",
+            "PasswordAuthFailed",
+            "PasswordTryExceeded",
+            "PayeeAuthenticationFailed",
+            "PayeeCardInvalid",
+            "PayeeInvalid",
+            "PayeeTokenIsBlocked",
+            "PayeeTokenIsClosed",
+            "PayeeTokenIsCompromised",
+            "PayeeTokenIsDeactivated",
+            "PayeeTokenIsDomestic",
+            "PayeeTokenIsExpired",
+            "PayeeTokenIsLost",
+            "PayeeTokenIsNotOpened",
+            "PayeeTokenIsNotStarted",
+            "PayeeTokenIsReferral",
+            "PayeeTokenIsRestricted",
+            "PayeeTokenIsStolen",
+            "PaymentParamsInvalid",
+            "PersonQaAuthFailed",
+            "PersonQaTryExceeded",
+            "PinAuthFailed",
+            "PinTryExceeded",
+            "PrearrangementViolated",
+            "Predeclined",
+            "Preprocessed",
+            "ProcessorLimitHasBeenReached",
+            "ProcessorLimitWillBeExceeded",
+            "ProcessorRestrictionViolated",
+            "RecipientRoutingError",
+            "RecipientTokenInvalid",
+            "RecipientTokenInvalidExp",
+            "RecipientTokenNotFound",
+            "Rejected",
+            "RejectedBatch",
+            "RejectedFile",
+            "RoutingError",
+            "SecretValueAuthFailed",
+            "SecretValueTryExceeded",
+            "SettlementBalanceExhausted",
+            "SettlementDeferred",
+            "SignAuthFailed",
+            "SystemError",
+            "TimeoutRevNotMatched",
+            "TokenIsBlocked",
+            "TokenIsClosed",
+            "TokenIsCompromised",
+            "TokenIsDeactivated",
+            "TokenIsDomestic",
+            "TokenIsExpired",
+            "TokenIsLost",
+            "TokenIsNotOpened",
+            "TokenIsNotStarted",
+            "TokenIsReferral",
+            "TokenIsRestricted",
+            "TokenIsStolen",
+            "WeakPin",
+            "WrongEncrKeyId",
+            "WrongExtCardActivationCode",
+            "WrongMacKeyId",
+            "WrongPinKeyId"
+          ]
+        },
+        "approvalCode": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "AQ6FM9",
+          "description": "Код одобрения"
+        },
+        "userAttrs": {
+          "$ref": "#/definitions/UserAttrs"
+        },
+        "custInfo": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "$ref": "#/definitions/CustInfoResponse"
+          }
+        }
+      }
+    }
+  },
+  "_meta_source": {
+    "openapi": "tyk.yml",
+    "info_version": "1.15.0",
+    "endpoint": "POST /api/1.1.0/prod_auth/_request",
+    "header": "x-mdm-id",
+    "collected_at": "2026-08-12",
+    "service_tag": "0.0.15.0.6"
+  }
+}

@@ -1,0 +1,334 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-regression-test-message
+      author: tester3000
+      changes:
+        - createTable:
+            tableName: regression_test_message
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: run_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: test_name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: auth_message
+                  type: jsonb
+                  constraints:
+                    nullable: false
+              - column:
+                  name: clearing_message
+                  type: jsonb
+                  constraints:
+                    nullable: true
+              - column:
+                  name: created_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+        - createIndex:
+            tableName: regression_test_message
+            indexName: idx_regression_test_message_run_id
+            columns:
+              - column:
+                  name: run_id
+  - changeSet:
+      id: 002-process
+      author: tester3000
+      changes:
+        - createTable:
+            tableName: process
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: run_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: test_message_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: step
+                  type: varchar(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: varchar(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: result
+                  type: text
+                  constraints:
+                    nullable: true
+              - column:
+                  name: created_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: process
+            baseColumnNames: test_message_id
+            referencedTableName: regression_test_message
+            referencedColumnNames: id
+            constraintName: fk_process_test_message
+        - createIndex:
+            tableName: process
+            indexName: idx_process_run_id
+            columns:
+              - column:
+                  name: run_id
+        - createIndex:
+            tableName: process
+            indexName: idx_process_test_message_id
+            columns:
+              - column:
+                  name: test_message_id
+  - changeSet:
+      id: 003-process-status-widen
+      author: tester3000
+      changes:
+        - modifyDataType:
+            tableName: process
+            columnName: status
+            newDataType: varchar(64)
+  - changeSet:
+      id: 004-process-outbox-fields
+      author: tester3000
+      changes:
+        - addColumn:
+            tableName: process
+            columns:
+              - column:
+                  name: req_id
+                  type: varchar(255)
+              - column:
+                  name: message
+                  type: text
+        - createIndex:
+            tableName: process
+            indexName: idx_process_req_id_status
+            columns:
+              - column:
+                  name: req_id
+              - column:
+                  name: status
+  - changeSet:
+      id: 005-process-drop-message-reqid-not-null
+      author: tester3000
+      changes:
+        - dropColumn:
+            tableName: process
+            columnName: message
+        - update:
+            tableName: process
+            columns:
+              - column:
+                  name: req_id
+                  value: unknown
+            where: req_id is null
+        - addNotNullConstraint:
+            tableName: process
+            columnName: req_id
+            columnDataType: varchar(255)
+  - changeSet:
+      id: 006-process-test-name-kind-rename-step
+      author: tester3000
+      changes:
+        - addColumn:
+            tableName: process
+            columns:
+              - column:
+                  name: test_name
+                  type: varchar(255)
+              - column:
+                  name: message_kind
+                  type: varchar(32)
+        - update:
+            tableName: process
+            columns:
+              - column:
+                  name: test_name
+                  value: unknown
+            where: test_name is null
+        - update:
+            tableName: process
+            columns:
+              - column:
+                  name: message_kind
+                  value: AUTH
+            where: message_kind is null AND step in ('AUTH_SEND', '25_FIN_MESSAGE', 'FIN_OUTBOX')
+        - update:
+            tableName: process
+            columns:
+              - column:
+                  name: message_kind
+                  value: CLEARING
+            where: message_kind is null AND step = 'CLEARING_SEND'
+        - update:
+            tableName: process
+            columns:
+              - column:
+                  name: message_kind
+                  value: AUTH
+            where: message_kind is null
+        - update:
+            tableName: process
+            columns:
+              - column:
+                  name: step
+                  value: 25_FIN_MESSAGE
+            where: step = 'FIN_OUTBOX'
+        - addNotNullConstraint:
+            tableName: process
+            columnName: test_name
+            columnDataType: varchar(255)
+        - addNotNullConstraint:
+            tableName: process
+            columnName: message_kind
+            columnDataType: varchar(32)
+  - changeSet:
+      id: 007-process-type-auth-clr
+      author: tester3000
+      changes:
+        - addColumn:
+            tableName: process
+            columns:
+              - column:
+                  name: type
+                  type: varchar(32)
+        - update:
+            tableName: process
+            columns:
+              - column:
+                  name: type
+                  value: AUTH
+            where: type is null AND (message_kind = 'AUTH' OR step in ('AUTH_SEND', '25_FIN_MESSAGE', 'FIN_OUTBOX'))
+        - update:
+            tableName: process
+            columns:
+              - column:
+                  name: type
+                  value: CLR
+            where: type is null AND (message_kind = 'CLEARING' OR step = 'CLEARING_SEND')
+        - update:
+            tableName: process
+            columns:
+              - column:
+                  name: type
+                  value: AUTH
+            where: type is null
+        - addNotNullConstraint:
+            tableName: process
+            columnName: type
+            columnDataType: varchar(32)
+        - dropColumn:
+            tableName: process
+            columnName: message_kind
+  - changeSet:
+      id: 008-test-messages-from-25
+      author: tester3000
+      validCheckSum: 9:ef28118c9c4fa6538d7b7d83419e5a4f
+      validCheckSum: 9:16acd3c31536fdafb9395637809bcbd5
+      changes:
+        - createTable:
+            tableName: test_messages_from_25
+            columns:
+              - column:
+                  name: test_cod
+                  type: varchar(255)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: test_description
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: auth
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: clr
+                  type: text
+        - sqlFile:
+            path: 008-seed-test-messages-from-25.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+            stripComments: true
+  - changeSet:
+      id: 009-test-messages-auth-clr-jsonb
+      author: tester3000
+      changes:
+        - sql:
+            sql: |
+              ALTER TABLE test_messages_from_25
+                ALTER COLUMN auth TYPE jsonb USING auth::jsonb,
+                ALTER COLUMN clr TYPE jsonb USING clr::jsonb;
+  - changeSet:
+      id: 010-test-code-short-ru-description
+      author: tester3000
+      changes:
+        - renameColumn:
+            tableName: test_messages_from_25
+            oldColumnName: test_cod
+            newColumnName: test_code
+            columnDataType: varchar(255)
+        - sql:
+            sql: |
+              UPDATE test_messages_from_25
+              SET test_code = 'CASH',
+                  test_description = 'Снятие наличных'
+              WHERE test_code = 'test_CASH_original_auth';
+
+              UPDATE test_messages_from_25
+              SET test_code = 'DEPOSIT',
+                  test_description = 'Внесение наличных'
+              WHERE test_code = 'test_DEPOSIT_original_auth';
+
+              UPDATE test_messages_from_25
+              SET test_code = 'GOODS',
+                  test_description = 'Покупка товаров'
+              WHERE test_code = 'test_GOODS_original_auth';
+
+              UPDATE test_messages_from_25
+              SET test_code = 'GOODS_WITH_CASHBACK',
+                  test_description = 'Покупка товаров с кэшбэком'
+              WHERE test_code = 'test_GOODS_WITH_CASHBACK_original_auth';
+
+              UPDATE test_messages_from_25
+              SET test_code = 'PAYMENT_DEBIT',
+                  test_description = 'Дебетовый платёж'
+              WHERE test_code = 'test_PAYMENT_DEBIT_original_auth';
+
+              UPDATE test_messages_from_25
+              SET test_code = 'PAYMENT_CREDIT',
+                  test_description = 'Кредитовый платёж'
+              WHERE test_code = 'test_PAYMENT_CREDIT_original_auth';

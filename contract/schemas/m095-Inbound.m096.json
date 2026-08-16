@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "m095.Inbound.m096",
+  "title": "m095 Kafka Inbound from m096",
+  "description": "From Inbound.java implementation. ignoreUnknown=true in code (schema uses additionalProperties true to match). Tag 0.0.9.0.12-5-g1b5972c",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "rId",
+    "cbiRequest"
+  ],
+  "properties": {
+    "rId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "cbiRequest": {
+      "type": "object",
+      "description": "JsonNode in code; arbitrary CBI JSON"
+    }
+  },
+  "_meta_source": {
+    "dto": "ru.vtb.ccop.m095.model.m096.Inbound",
+    "topic_default": "ccop.prx.event.clearing",
+    "collected_at": "2026-08-12"
+  }
+}
