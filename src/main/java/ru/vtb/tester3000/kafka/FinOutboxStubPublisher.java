@@ -11,6 +11,7 @@ import ru.vtb.tester3000.config.TesterProperties;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
@@ -18,7 +19,8 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Заглушка: публикует по 2 сообщения со случайными статусами
- * в топики 25_FIN_MESSAGE / 104_FIN_INSTRUCTION / 39_FIN_TRANSACTION.
+ * в топики 25 / 104 / 39 с корректной цепочкой связки
+ * (39.Instruction.Id.Id = 104.Object.Id.Id → Parent RelatedInstructions → rId).
  */
 @Component
 @ConditionalOnProperty(prefix = "tester3000.kafka", name = "fin-outbox-stub-enabled", havingValue = "true", matchIfMissing = true)
@@ -52,55 +54,52 @@ public class FinOutboxStubPublisher {
     }
 
     /**
-     * По 2 сообщения со случайным статусом в каждый из трёх outbox-топиков.
+     * По 2 набора: 25 (Object.Id.Id=rId), 104 (Object.Id.Id=instrId, Parent→rId),
+     * 39 (Instruction.Id.Id=instrId). 104 публикуется до 39.
      */
     public List<PublishResult> publishRandomPairToAllTopics(String reqId, JsonNode sourceMessage) {
         TesterProperties.Kafka kafka = properties.getKafka();
-        return List.of(
-                publishRandom(kafka.getFinOutboxTopic(), "BusinessCardIncomingMessage", "2.5.0",
-                        FIN_MESSAGE_STATUSES, reqId, sourceMessage),
-                publishRandom(kafka.getFinOutboxTopic(), "BusinessCardIncomingMessage", "2.5.0",
-                        FIN_MESSAGE_STATUSES, reqId, sourceMessage),
-                publishRandom(kafka.getFinInstructionTopic(), "BusinessCardFinancialInstruction", "2.3.0",
-                        FIN_INSTRUCTION_STATUSES, reqId, sourceMessage),
-                publishRandom(kafka.getFinInstructionTopic(), "BusinessCardFinancialInstruction", "2.3.0",
-                        FIN_INSTRUCTION_STATUSES, reqId, sourceMessage),
-                publishRandom(kafka.getFinTransactionTopic(), "BusinessCardFinancialTransaction", "2.3.0",
-                        FIN_TRANSACTION_STATUSES, reqId, sourceMessage),
-                publishRandom(kafka.getFinTransactionTopic(), "BusinessCardFinancialTransaction", "2.3.0",
-                        FIN_TRANSACTION_STATUSES, reqId, sourceMessage)
-        );
+        List<PublishResult> results = new ArrayList<>(6);
+        for (int i = 0; i < 2; i++) {
+            String messageStatus = randomStatus(FIN_MESSAGE_STATUSES);
+            results.add(publish(
+                    kafka.getFinOutboxTopic(),
+                    buildFinMessage(reqId, messageStatus, sourceMessage),
+                    reqId,
+                    messageStatus
+            ));
+
+            String instructionObjectId = UUID.randomUUID().toString();
+            String instructionStatus = randomStatus(FIN_INSTRUCTION_STATUSES);
+            results.add(publish(
+                    kafka.getFinInstructionTopic(),
+                    buildFinInstruction(instructionObjectId, reqId, instructionStatus, sourceMessage),
+                    reqId,
+                    instructionStatus
+            ));
+
+            String transactionStatus = randomStatus(FIN_TRANSACTION_STATUSES);
+            results.add(publish(
+                    kafka.getFinTransactionTopic(),
+                    buildFinTransaction(instructionObjectId, transactionStatus, sourceMessage),
+                    reqId,
+                    transactionStatus
+            ));
+        }
+        return results;
     }
 
-    private PublishResult publishRandom(
-            String topic,
-            String objectName,
-            String version,
-            List<String> statuses,
-            String reqId,
-            JsonNode sourceMessage
-    ) {
-        String status = statuses.get(ThreadLocalRandom.current().nextInt(statuses.size()));
-        return publish(topic, objectName, version, status, reqId, sourceMessage);
-    }
-
-    private PublishResult publish(
-            String topic,
-            String objectName,
-            String version,
-            String objectStatus,
-            String reqId,
-            JsonNode sourceMessage
-    ) {
+    private PublishResult publish(String topic, ObjectNode message, String kafkaKey, String objectStatus) {
         try {
-            ObjectNode message = buildMessage(objectName, version, reqId, objectStatus, sourceMessage);
+            // status already baked into message; re-read for result record
+            String status = message.at("/Object/Status").asText(objectStatus);
             String payload = objectMapper.writeValueAsString(message);
-            var result = kafkaTemplate.send(topic, reqId, payload).get(30, TimeUnit.SECONDS);
+            var result = kafkaTemplate.send(topic, kafkaKey, payload).get(30, TimeUnit.SECONDS);
             var meta = result.getRecordMetadata();
             return new PublishResult(
                     true,
                     topic,
-                    objectStatus,
+                    status,
                     payload,
                     "topic=" + meta.topic() + ", partition=" + meta.partition() + ", offset=" + meta.offset()
             );
@@ -109,10 +108,54 @@ public class FinOutboxStubPublisher {
         }
     }
 
-    private ObjectNode buildMessage(
+    private ObjectNode buildFinMessage(String reqId, String objectStatus, JsonNode sourceMessage) {
+        ObjectNode root = baseEnvelope("BusinessCardIncomingMessage", "2.5.0", objectStatus, sourceMessage);
+        ObjectNode object = (ObjectNode) root.get("Object");
+        ObjectNode objectId = (ObjectNode) object.get("Id");
+        objectId.put("Id", reqId);
+        return root;
+    }
+
+    private ObjectNode buildFinInstruction(
+            String instructionObjectId,
+            String parentReqId,
+            String objectStatus,
+            JsonNode sourceMessage
+    ) {
+        ObjectNode root = baseEnvelope("BusinessCardFinancialInstruction", "2.3.0", objectStatus, sourceMessage);
+        ObjectNode object = (ObjectNode) root.get("Object");
+        ObjectNode objectId = (ObjectNode) object.get("Id");
+        objectId.put("Id", instructionObjectId);
+
+        ObjectNode related = object.putArray("RelatedInstructions").addObject();
+        related.put("Type", "Parent");
+        ObjectNode instruction = related.putObject("Instruction");
+        ObjectNode instructionId = instruction.putObject("Id");
+        instructionId.put("Id", parentReqId);
+        instructionId.put("System", "CCOP");
+        return root;
+    }
+
+    private ObjectNode buildFinTransaction(
+            String instructionObjectId,
+            String objectStatus,
+            JsonNode sourceMessage
+    ) {
+        ObjectNode root = baseEnvelope("BusinessCardFinancialTransaction", "2.3.0", objectStatus, sourceMessage);
+        ObjectNode object = (ObjectNode) root.get("Object");
+        ObjectNode objectId = (ObjectNode) object.get("Id");
+        objectId.put("Id", UUID.randomUUID().toString());
+
+        ObjectNode instruction = object.putObject("Instruction");
+        ObjectNode instructionId = instruction.putObject("Id");
+        instructionId.put("Id", instructionObjectId);
+        instructionId.put("System", "CCOP");
+        return root;
+    }
+
+    private ObjectNode baseEnvelope(
             String objectName,
             String version,
-            String reqId,
             String objectStatus,
             JsonNode sourceMessage
     ) {
@@ -142,7 +185,7 @@ public class FinOutboxStubPublisher {
         ObjectNode object = root.putObject("Object");
         object.put("Status", objectStatus);
         ObjectNode objectId = object.putObject("Id");
-        objectId.put("Id", reqId);
+        objectId.put("Id", UUID.randomUUID().toString());
         objectId.put("System", "CCOP");
         objectId.put("CreateTime", now);
         objectId.put("UpdateTime", now);
@@ -176,5 +219,9 @@ public class FinOutboxStubPublisher {
                 sourceMessage.at("/cbiRequest/tranRequest/parties/term/owner/city").asText("MOSCOW"));
 
         return root;
+    }
+
+    private static String randomStatus(List<String> statuses) {
+        return statuses.get(ThreadLocalRandom.current().nextInt(statuses.size()));
     }
 }

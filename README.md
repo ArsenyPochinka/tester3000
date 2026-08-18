@@ -178,7 +178,10 @@ POST /run
 
 - У каждого auth/clearing свой `rId` (`reqId` в process).
 - Внутри слота (primary / add_1 / add_2) общий ключ: `match.key` (auth) = `link[].key` (clearing) — 40 символов `[A-Z0-9]` + 18-значный RRN.
-- Outbox матчится по `Object.Id.Id` = `reqId`.
+- Outbox матчится с `rId` отправленных m210/m095:
+  - **25** — `Object.Id.Id` = rId
+  - **104** — `RelatedInstructions[].Instruction.Id.Id` = rId, где `Type = Parent`
+  - **39** — `Instruction.Id.Id` = `Object.Id.Id` события **104**, далее rId через `RelatedInstructions[].Type=Parent` этого 104
 
 ### Шаги `process`
 
