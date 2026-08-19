@@ -7,6 +7,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
@@ -76,24 +77,11 @@ public class AppConfig {
         return executor;
     }
 
+    // --- Clearing Kafka: spring.kafka.bootstrap-servers ---
+
     @Bean
     NewTopic clearingTopic(TesterProperties properties) {
         return TopicBuilder.name(properties.getKafka().getClearingTopic()).partitions(1).replicas(1).build();
-    }
-
-    @Bean
-    NewTopic finOutboxTopic(TesterProperties properties) {
-        return TopicBuilder.name(properties.getKafka().getFinOutboxTopic()).partitions(1).replicas(1).build();
-    }
-
-    @Bean
-    NewTopic finInstructionTopic(TesterProperties properties) {
-        return TopicBuilder.name(properties.getKafka().getFinInstructionTopic()).partitions(1).replicas(1).build();
-    }
-
-    @Bean
-    NewTopic finTransactionTopic(TesterProperties properties) {
-        return TopicBuilder.name(properties.getKafka().getFinTransactionTopic()).partitions(1).replicas(1).build();
     }
 
     @Bean
@@ -116,28 +104,28 @@ public class AppConfig {
         return new KafkaTemplate<>(clearingProducerFactory);
     }
 
+    // --- Fin outbox Kafka 25/104/39: tester3000.kafka.fin-bootstrap-servers ---
+
     @Bean
-    ProducerFactory<String, String> stringProducerFactory(
-            @Value("${spring.kafka.bootstrap-servers}") String bootstrapServers
-    ) {
+    ProducerFactory<String, String> finOutboxProducerFactory(TesterProperties properties) {
         Map<String, Object> props = new HashMap<>();
-        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, properties.getKafka().getFinBootstrapServers());
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         return new DefaultKafkaProducerFactory<>(props);
     }
 
     @Bean
-    KafkaTemplate<String, String> stringKafkaTemplate(ProducerFactory<String, String> stringProducerFactory) {
-        return new KafkaTemplate<>(stringProducerFactory);
+    KafkaTemplate<String, String> finOutboxKafkaTemplate(
+            @Qualifier("finOutboxProducerFactory") ProducerFactory<String, String> finOutboxProducerFactory
+    ) {
+        return new KafkaTemplate<>(finOutboxProducerFactory);
     }
 
     @Bean
-    ConsumerFactory<String, String> stringConsumerFactory(
-            @Value("${spring.kafka.bootstrap-servers}") String bootstrapServers
-    ) {
+    ConsumerFactory<String, String> finOutboxConsumerFactory(TesterProperties properties) {
         Map<String, Object> props = new HashMap<>();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, properties.getKafka().getFinBootstrapServers());
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
@@ -145,12 +133,12 @@ public class AppConfig {
     }
 
     @Bean
-    ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory(
-            ConsumerFactory<String, String> stringConsumerFactory
+    ConcurrentKafkaListenerContainerFactory<String, String> finOutboxKafkaListenerContainerFactory(
+            @Qualifier("finOutboxConsumerFactory") ConsumerFactory<String, String> finOutboxConsumerFactory
     ) {
         ConcurrentKafkaListenerContainerFactory<String, String> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(stringConsumerFactory);
+        factory.setConsumerFactory(finOutboxConsumerFactory);
         return factory;
     }
 }

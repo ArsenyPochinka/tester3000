@@ -56,7 +56,8 @@ public class FinMessageOutboxConsumer {
 
     @KafkaListener(
             topics = "${tester3000.kafka.fin-outbox-topic:tsss.ccop_incoming_fin_message.outbox}",
-            groupId = "${tester3000.kafka.fin-outbox-group-id:tester3000-fin-outbox}"
+            groupId = "${tester3000.kafka.fin-outbox-group-id:tester3000-fin-outbox}",
+            containerFactory = "finOutboxKafkaListenerContainerFactory"
     )
     @Transactional
     public void onFinMessage(@Payload String payload) {
@@ -65,7 +66,8 @@ public class FinMessageOutboxConsumer {
 
     @KafkaListener(
             topics = "${tester3000.kafka.fin-instruction-topic:tsss.ccop_fin_instruction.outbox}",
-            groupId = "${tester3000.kafka.fin-instruction-group-id:tester3000-fin-instruction}"
+            groupId = "${tester3000.kafka.fin-instruction-group-id:tester3000-fin-instruction}",
+            containerFactory = "finOutboxKafkaListenerContainerFactory"
     )
     @Transactional
     public void onFinInstruction(@Payload String payload) {
@@ -74,7 +76,8 @@ public class FinMessageOutboxConsumer {
 
     @KafkaListener(
             topics = "${tester3000.kafka.fin-transaction-topic:tsss.ccop_fin_transaction.outbox}",
-            groupId = "${tester3000.kafka.fin-transaction-group-id:tester3000-fin-transaction}"
+            groupId = "${tester3000.kafka.fin-transaction-group-id:tester3000-fin-transaction}",
+            containerFactory = "finOutboxKafkaListenerContainerFactory"
     )
     @Transactional
     public void onFinTransaction(@Payload String payload) {

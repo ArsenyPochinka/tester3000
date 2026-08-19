@@ -99,6 +99,8 @@ public class TesterProperties {
 
     public static class Kafka {
         private String clearingTopic = "ccop.prx.event.clearing";
+        /** Bootstrap Kafka для outbox-топиков 25 / 104 / 39. */
+        private String finBootstrapServers = "localhost:9093";
         private String finOutboxTopic = "tsss.ccop_incoming_fin_message.outbox";
         private String finOutboxGroupId = "tester3000-fin-outbox";
         private String finInstructionTopic = "tsss.ccop_fin_instruction.outbox";
@@ -113,6 +115,14 @@ public class TesterProperties {
 
         public void setClearingTopic(String clearingTopic) {
             this.clearingTopic = clearingTopic;
+        }
+
+        public String getFinBootstrapServers() {
+            return finBootstrapServers;
+        }
+
+        public void setFinBootstrapServers(String finBootstrapServers) {
+            this.finBootstrapServers = finBootstrapServers;
         }
 
         public String getFinOutboxTopic() {

@@ -47,7 +47,8 @@ docker compose up --build -d
 |--------|------|------------|
 | `tester3000` | `127.0.0.1:8080` | API + Swagger |
 | `postgres` | `127.0.0.1:5432` | БД `tester3000` / user `tester` / password `tester` |
-| `kafka` | `127.0.0.1:9092` | Kafka |
+| `kafka` | `127.0.0.1:9092` | Kafka clearing (m095) |
+| `kafka-fin` | `127.0.0.1:9093` | Kafka outbox 25 / 104 / 39 |
 
 Порты слушаются только на localhost (не торчат в LAN).
 
@@ -249,8 +250,9 @@ POST /run
 | `tester3000.m210.base-url` | `M210_BASE_URL` | `http://127.0.0.1:8080` | URL m210 |
 | `tester3000.m210.stub-enabled` | `M210_STUB_ENABLED` | `true` | Встроенная заглушка m210 |
 | `tester3000.kafka.fin-outbox-stub-enabled` | `FIN_OUTBOX_STUB_ENABLED` | `true` | Заглушка outbox (3×2) |
+| `tester3000.kafka.fin-bootstrap-servers` | `FIN_KAFKA_BOOTSTRAP` | `localhost:9093` | Kafka outbox 25/104/39 |
 | DB | `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` | localhost / tester3000 / tester | PostgreSQL |
-| Kafka | `KAFKA_BOOTSTRAP` | `localhost:9092` | Bootstrap |
+| Kafka clearing | `KAFKA_BOOTSTRAP` | `localhost:9092` | Kafka clearing (m095) |
 
 ### Заглушки
 

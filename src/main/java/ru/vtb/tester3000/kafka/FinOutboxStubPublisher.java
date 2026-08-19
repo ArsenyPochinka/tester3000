@@ -3,6 +3,7 @@ package ru.vtb.tester3000.kafka;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
@@ -41,11 +42,11 @@ public class FinOutboxStubPublisher {
     private final ObjectMapper objectMapper;
 
     public FinOutboxStubPublisher(
-            KafkaTemplate<String, String> stringKafkaTemplate,
+            @Qualifier("finOutboxKafkaTemplate") KafkaTemplate<String, String> finOutboxKafkaTemplate,
             TesterProperties properties,
             ObjectMapper objectMapper
     ) {
-        this.kafkaTemplate = stringKafkaTemplate;
+        this.kafkaTemplate = finOutboxKafkaTemplate;
         this.properties = properties;
         this.objectMapper = objectMapper;
     }

@@ -40,6 +40,8 @@ tester3000:
     stub-enabled: ${M210_STUB_ENABLED:true}
   kafka:
     clearing-topic: ccop.prx.event.clearing
+    # Отдельный кластер для outbox 25 / 104 / 39 (stub + consumers)
+    fin-bootstrap-servers: ${FIN_KAFKA_BOOTSTRAP:localhost:9093}
     fin-outbox-topic: tsss.ccop_incoming_fin_message.outbox
     fin-outbox-group-id: tester3000-fin-outbox
     fin-instruction-topic: tsss.ccop_fin_instruction.outbox
